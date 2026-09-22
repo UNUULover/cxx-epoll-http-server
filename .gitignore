@@ -1,0 +1,8 @@
+build/
+bench/
+*.o
+*.a
+compile_commands.json
+*.log
+logs/
+.cache/

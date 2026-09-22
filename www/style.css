@@ -1,0 +1,17 @@
+body {
+  font-family: -apple-system, "Segoe UI", "Noto Sans CJK SC", sans-serif;
+  max-width: 46rem;
+  margin: 3rem auto;
+  padding: 0 1.2rem;
+  line-height: 1.7;
+  color: #1f2328;
+}
+h1 { margin-bottom: .2rem; }
+code {
+  background: #f1f3f5;
+  padding: .1rem .35rem;
+  border-radius: 4px;
+  font-size: .92em;
+}
+ul { padding-left: 1.2rem; }
+li { margin: .25rem 0; }

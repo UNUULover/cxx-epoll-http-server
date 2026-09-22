@@ -1,0 +1,10 @@
+# 仓库里统一用 LF：这是个 Linux 项目，CRLF 混进来只会在编译和脚本执行时添乱。
+* text=auto eol=lf
+
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.woff binary
+*.woff2 binary

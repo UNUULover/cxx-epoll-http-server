@@ -1,0 +1,27 @@
+services:
+  # 三个同样的服务实例。每个实例自己是一个独立的进程 + 自己的 Reactor 线程池，
+  # 因此这层是进程级扩展；容器内部的多线程扩展由 -t 控制。
+  ws1: &ws_service
+    build: .
+    command: ["-p", "8080", "-t", "2", "-d", "/app/www", "-i", "60", "-l", "-"]
+    expose: ["8080"]
+    restart: unless-stopped
+
+  ws2:
+    <<: *ws_service
+
+  ws3:
+    <<: *ws_service
+
+  # 反向代理 + 负载均衡。对外只暴露这一个端口。
+  lb:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - ws1
+      - ws2
+      - ws3
+    restart: unless-stopped

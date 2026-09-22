@@ -1,0 +1,57 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libgtest-dev
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build -j"$(nproc)"
+
+      - name: Unit tests
+        run: ./build/ws_tests --gtest_color=no
+
+      - name: Smoke test the running server
+        run: |
+          ./build/ws_server -p 18080 -t 2 -d ./www -i 5 -l /tmp/ci.log &
+          for _ in $(seq 1 50); do
+            curl -sf http://127.0.0.1:18080/hello >/dev/null && break
+            sleep 0.1
+          done
+
+          echo "--- GET /hello"
+          curl -sf http://127.0.0.1:18080/hello
+
+          echo "--- POST /echo"
+          curl -sf -X POST -d 'ci-body' http://127.0.0.1:18080/echo
+
+          echo "--- GET /stats"
+          curl -sf http://127.0.0.1:18080/stats
+
+          echo "--- status codes"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/nope)" = "404"
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X DELETE http://127.0.0.1:18080/)" = "405"
+          echo "status codes ok"
+
+          kill %1
+
+      - name: Upload server log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-log
+          path: /tmp/ci.log
+          if-no-files-found: ignore

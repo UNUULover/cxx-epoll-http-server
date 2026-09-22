@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>ws-server</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <h1>ws-server</h1>
+  <p>一个从零实现的 Linux C++ 高并发 HTTP 服务器。</p>
+  <ul>
+    <li>基于 epoll 的 Reactor 模式，主从 Reactor 可切换</li>
+    <li>HTTP/1.1 有限状态机解析，支持 keep-alive 与 pipelining</li>
+    <li>最小堆定时器回收空闲连接</li>
+    <li>异步日志（阻塞队列 + 双缓冲）</li>
+    <li>定长块内存池</li>
+  </ul>
+  <p>端点：<code>GET /stats</code>（运行统计 JSON）、<code>POST /echo</code>（回显请求体）。</p>
+</body>
+</html>
