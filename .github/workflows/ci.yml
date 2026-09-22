@@ -55,3 +55,49 @@ jobs:
           name: server-log
           path: /tmp/ci.log
           if-no-files-found: ignore
+
+  # Verifies the deployment path: three server instances behind an nginx reverse
+  # proxy, brought up with docker compose. This is the part that cannot be
+  # checked by building the binary alone.
+  docker-compose:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bring the stack up
+        run: docker compose up --build -d
+
+      - name: Serve requests through the load balancer
+        run: |
+          echo "--- waiting for the proxy to answer"
+          for _ in $(seq 1 60); do
+            curl -sf http://127.0.0.1:8080/hello >/dev/null && break
+            sleep 2
+          done
+
+          echo "--- GET /hello via nginx"
+          curl -sf http://127.0.0.1:8080/hello
+
+          echo "--- GET /stats via nginx"
+          curl -sf http://127.0.0.1:8080/stats
+
+          echo "--- POST /echo via nginx"
+          curl -sf -X POST -d 'through-the-proxy' http://127.0.0.1:8080/echo
+
+          echo "--- fan out 30 requests, then read each backend's own counter"
+          for _ in $(seq 1 30); do curl -s http://127.0.0.1:8080/hello >/dev/null; done
+          for svc in ws1 ws2 ws3; do
+            printf '%s: ' "$svc"
+            docker compose exec -T "$svc" curl -s http://127.0.0.1:8080/stats
+          done
+
+          echo "--- containers"
+          docker compose ps
+
+      - name: Stack logs on failure
+        if: failure()
+        run: docker compose logs --tail 50
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
