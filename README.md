@@ -8,19 +8,33 @@
 
 ---
 
-## 当前状态（重要，别跳过）
+## 当前状态
 
-| 项 | 状态 |
-|---|---|
-| 编译（g++ 13.3.0 / `-Wall -Wextra`） | ✅ 零错误零告警 |
-| 单元测试（GoogleTest，6 个 suite / 43 个用例） | ✅ 全部通过 |
-| 功能冒烟（静态文件 / echo / 400 / pipelining / 分片 body / 空闲回收） | ✅ 全部通过 |
-| 压测（wrk，含 nginx 对照） | ✅ 已跑，见 `docs/BENCHMARKS.md` |
-| 空闲定时器改为「每连接仅一个待触发条目」 | ⚠️ **已改代码，尚未重新编译验证** |
+每一项都由 GitHub Actions 在干净的 ubuntu-24.04 runner 上跑过一遍，
+外加本机 VMware 虚拟机（Ubuntu 24.04 / g++ 13.3.0）上的一次独立复现。
 
-最后一行是本文档写就时留下的状态：那次改动（`Connection::armIdleTimer()` /
-`touch()`）改完后环境里的 shell 就不可用了，**没有重新编译和跑测试**。
-重新验证只需要一条命令，见下面「构建与运行」。
+| 项 | 状态 | 证据 |
+|---|---|---|
+| 编译（`-Wall -Wextra`） | ✅ 零错误零告警 | 本机 VM + CI `Build` 步骤 |
+| 单元测试（GoogleTest） | ✅ **43 个用例 / 6 个套件全部通过** | CI `Unit tests` 步骤输出 |
+| 功能冒烟 | ✅ 静态文件 / echo / stats / 404 / 405 全过 | CI `Smoke test the running server` 步骤 |
+| 压测 | ✅ 已跑，含同机 nginx 对照 | `docs/BENCHMARKS.md` |
+| 空闲定时器「每连接仅一个待触发条目」 | ✅ 编译通过、单测全绿；行为已实测（见下） | CI 日志中三个后端的 `/stats` |
+| Docker / docker-compose / Nginx 反向代理 | ✅ 三个实例实测分担请求（累计 14 / 12 / 11 次） | CI `docker-compose` 作业 |
+
+那条定时器改动的行为证据，直接抄自 CI 日志里三个后端各自的 `/stats`：
+
+```
+ws1: {"accepted":5,"requests":14,...,"active_connections":5,"pending_timers":4}
+ws2: {"accepted":3,"requests":12,...,"active_connections":3,"pending_timers":2}
+ws3: {"accepted":3,"requests":11,...,"active_connections":3,"pending_timers":2}
+```
+
+`ws1` 处理了 14 个请求，待触发定时器只有 4 个；按改之前「每个请求重装一次」的写法，
+这个数会跟着请求数涨到 14 以上。**它现在是跟着连接数走的。**
+
+仍然没做的测量（见 `docs/BENCHMARKS.md` 第六节）：每请求系统调用次数的定量统计、
+以及 ≥4 vCPU 下的架构对比。
 
 ---
 

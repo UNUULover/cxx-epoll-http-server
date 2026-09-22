@@ -126,10 +126,23 @@ pidstat -p "$(pgrep -f 'ws_server -p 18081')" 1 6
 
 ## 六、还没做的测量
 
-1. **定量的系统调用统计**（计划用 `strace -c -f` 统计每请求的 `read`/`write`/`epoll_ctl` 次数，
-   预期是每请求各 1 次 read 和 write、0 次 `epoll_ctl`）。这是"send 里先试写一次"这个优化
-   最直接的证据，但本次没有跑出可信结果。
-2. **`pending_timers` 的对比**：改掉"每请求重装定时器"之前，这个数应当随请求数线性增长；
-   改完之后应当约等于连接数。这是那次改动的验收指标。
-3. **≥4 vCPU 下的架构对比**，以及把压测端放到另一台机器上的对比。
-4. **长连接下的稳定性**：连续压 10 分钟以上，观察 RSS 是否平稳。
+1. **定量的系统调用统计**：用 `strace -c -f` 统计每请求的 `read`/`write`/`epoll_ctl` 次数，
+   预期是每请求各 1 次 read 和 write、0 次 `epoll_ctl`。这是"send 里先试写一次"这个优化
+   最直接的证据，目前还没有可信数据。
+2. **≥4 vCPU 下的架构对比**，以及把压测端放到另一台机器上的对比。
+3. **长连接下的稳定性**：连续压 10 分钟以上，观察 RSS 是否平稳。
+
+## 七、已经做完的：`pending_timers` 的行为验证
+
+第五节里说的"改掉每请求重装定时器之前，这个数应当随请求数线性增长" —— 已完成，
+证据来自 CI 中 docker-compose 作业里三个后端各自的 `/stats`：
+
+```
+ws1: {"accepted":5,"requests":14,...,"active_connections":5,"pending_timers":4}
+ws2: {"accepted":3,"requests":12,...,"active_connections":3,"pending_timers":2}
+ws3: {"accepted":3,"requests":11,...,"active_connections":3,"pending_timers":2}
+```
+
+`ws1` 服务了 14 个请求，`pending_timers` 只有 4 个；旧的「每请求 cancel + 重装」写法下
+它至少会等于请求数。所以**定时器堆的大小确实只跟连接数相关，与请求数无关** ——
+这也解释了为什么这个计数器值得留在 `/stats` 里：它是这个设计决策唯一的可观测指标。
