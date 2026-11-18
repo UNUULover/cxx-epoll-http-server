@@ -231,7 +231,7 @@ curl -o /dev/null -w '%{http_code}\n' -X DELETE http://127.0.0.1:8080/ # 405
 
 ---
 
-## 已知限制（面试被问到就直说，别硬撑）
+## 已知限制（面试的时候如果HR技术面细看的话肯定会问，以下问题仅供参考不能保证一定会出现在面试中）
 
 1. **不支持 `Transfer-Encoding: chunked`**。解析到会明确返回 400/501，而不是静默解析错。
    实现它需要把 body 状态再拆成 `chunk-size / chunk-data / trailer` 三个子状态。
