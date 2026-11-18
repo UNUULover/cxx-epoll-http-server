@@ -1,7 +1,12 @@
 # ws-server
+声明：该项目绝大部分代码架构等均由AI编写，作者仅提供方向，该项目旨在帮助正在求职的同学学习CPP服务器相关方向积累经验
+这个项目肯定是不完美甚至不好用的但是架构性能测试等技术路径和指标评定还算清楚，如果你正在看这个项目欢迎批评指正也希望这个项目能对你有所帮助
+Disclaimer: The vast majority of the code architecture and related components for this project were written by AI, with the author only providing the overall direction. This project aims to help fellow students who are currently job hunting to gain experience and learn about C++ server-related fields.
 
-一个从零实现的 Linux C++ 高并发 HTTP 服务器：不依赖任何第三方网络库，自己实现
-事件循环、协议解析、定时器、内存池和异步日志。
+The project is certainly not perfect and may even be difficult to use, but the technical paths and metric evaluations regarding architecture, performance testing, etc., are quite clear. If you are reviewing this project, your criticisms and corrections are welcome, and I hope this project can be helpful to you.
+
+一个从零实现的 Linux C++ 高并发 HTTP 服务器：不依赖任何第三方网络库，
+自己实现事件循环、协议解析、定时器、内存池和异步日志。
 
 目标不是"跑分"，而是把 Linux 网络编程里那几个真正会被追问的点（epoll 的触发模式、
 跨线程唤醒、连接生命周期、定时器堆、日志不阻塞主链路）都落到能解释清楚的代码上。
